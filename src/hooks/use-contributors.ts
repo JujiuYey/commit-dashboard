@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import { giteaCommitsApi } from "@/api/gitea";
 import { useGiteaStore } from "@/stores/gitea";
@@ -6,18 +6,10 @@ import type { GiteaContributor } from "@/types/gitea";
 
 export function useContributors() {
   const selectedRepos = useGiteaStore(s => s.selectedRepos);
-  const [data, setData] = useState<GiteaContributor[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
 
-  const fetch = useCallback(async () => {
-    if (selectedRepos.length === 0) {
-      setData([]);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
+  const query = useQuery({
+    queryKey: ["contributors", selectedRepos],
+    queryFn: async () => {
       const results = await Promise.all(
         selectedRepos.map(r =>
           giteaCommitsApi.listCommits(r.owner, r.repo, { limit: 50 }),
@@ -46,18 +38,15 @@ export function useContributors() {
           }
         }
       }
-      const merged = Array.from(map.values()).sort((a, b) => b.contributions - a.contributions);
-      setData(merged);
-    }
-    catch (e) {
-      setError(e instanceof Error ? e : new Error("获取贡献者数据失败"));
-    }
-    finally {
-      setLoading(false);
-    }
-  }, [selectedRepos]);
+      return Array.from(map.values()).sort((a, b) => b.contributions - a.contributions);
+    },
+    enabled: selectedRepos.length > 0,
+  });
 
-  useEffect(() => { fetch(); }, [fetch]);
-
-  return { data, loading, error, refetch: fetch };
+  return {
+    data: query.data ?? [] as GiteaContributor[],
+    loading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch,
+  };
 }
