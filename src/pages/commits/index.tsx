@@ -1,6 +1,6 @@
 import { type ColumnDef } from "@tanstack/react-table";
 import * as React from "react";
-import { Line, LineChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, Bar, BarChart, Line, LineChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 import { DataTable } from "@/components/sag-ui/data-table";
 import { Badge } from "@/components/ui/badge";
@@ -27,11 +27,31 @@ import {
 } from "@/components/ui/select";
 import { useCommits } from "@/hooks/use-commits";
 import type { GiteaCommit } from "@/types/gitea";
-import { type Granularity, getCommitHeatmapData, groupCommitsByDate } from "@/utils/stats";
+import {
+  type Granularity,
+  getCommitHeatmapData,
+  getCommitSizeDistribution,
+  getCommitTypeDistribution,
+  getCumulativeCommits,
+  groupCodeChangesByDate,
+  groupCommitsByDate,
+} from "@/utils/stats";
 
 const chartConfig = {
   count: {
     label: "提交数",
+    color: "var(--primary)",
+  },
+  additions: {
+    label: "新增行",
+    color: "oklch(0.72 0.19 149)",
+  },
+  deletions: {
+    label: "删除行",
+    color: "oklch(0.64 0.2 25)",
+  },
+  total: {
+    label: "累计提交",
     color: "var(--primary)",
   },
 } satisfies ChartConfig;
@@ -78,6 +98,10 @@ export function CommitsPage() {
 
   const trendData = groupCommitsByDate(commits, granularity);
   const heatmapData = getCommitHeatmapData(commits);
+  const codeChangesData = groupCodeChangesByDate(commits, granularity);
+  const cumulativeData = getCumulativeCommits(commits, granularity);
+  const sizeDistribution = getCommitSizeDistribution(commits);
+  const typeDistribution = getCommitTypeDistribution(commits);
 
   const maxHeat = Math.max(1, ...heatmapData.map(d => d.count));
 
@@ -104,7 +128,7 @@ export function CommitsPage() {
           </CardAction>
         </CardHeader>
         <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-          <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
+          <ChartContainer config={chartConfig} className="aspect-auto h-62.5 w-full">
             <LineChart data={trendData}>
               <CartesianGrid vertical={false} />
               <XAxis
@@ -138,10 +162,10 @@ export function CommitsPage() {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <div className="inline-grid gap-0.5" style={{ gridTemplateColumns: `auto repeat(24, 1fr)` }}>
+            <div className="grid gap-0.5" style={{ gridTemplateColumns: `auto repeat(24, 1fr)` }}>
               <div />
               {Array.from({ length: 24 }, (_, h) => (
-                <div key={h} className="text-xs text-muted-foreground text-center w-6">{h}</div>
+                <div key={h} className="text-xs text-muted-foreground text-center">{h}</div>
               ))}
               {DAYS.map((day, dayIdx) => (
                 <React.Fragment key={day}>
@@ -153,7 +177,7 @@ export function CommitsPage() {
                     return (
                       <div
                         key={h}
-                        className="w-6 h-6 rounded-sm"
+                        className="aspect-square rounded-sm"
                         style={{ backgroundColor: count > 0 ? `oklch(0.65 0.2 145 / ${0.15 + opacity * 0.85})` : "var(--muted)" }}
                         title={`${day} ${h}:00 - ${count} 次提交`}
                       />
@@ -165,6 +189,124 @@ export function CommitsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* 代码变更量趋势 */}
+      <Card>
+        <CardHeader>
+          <CardTitle>代码变更量趋势</CardTitle>
+          <CardDescription>按时间粒度分组的新增和删除行数</CardDescription>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+          <ChartContainer config={chartConfig} className="aspect-auto h-62.5full">
+            <AreaChart data={codeChangesData}>
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey="date"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                minTickGap={32}
+                tickFormatter={v => new Date(v).toLocaleDateString("zh-CN", { month: "short", day: "numeric" })}
+              />
+              <YAxis tickLine={false} axisLine={false} width={50} />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Area
+                dataKey="additions"
+                name="新增行"
+                type="monotone"
+                fill="var(--color-additions)"
+                fillOpacity={0.3}
+                stroke="var(--color-additions)"
+                strokeWidth={2}
+                stackId="a"
+              />
+              <Area
+                dataKey="deletions"
+                name="删除行"
+                type="monotone"
+                fill="var(--color-deletions)"
+                fillOpacity={0.3}
+                stroke="var(--color-deletions)"
+                strokeWidth={2}
+                stackId="b"
+              />
+            </AreaChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
+
+      {/* 累计提交曲线 */}
+      <Card>
+        <CardHeader>
+          <CardTitle>累计提交曲线</CardTitle>
+          <CardDescription>提交总量随时间的增长趋势</CardDescription>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+          <ChartContainer config={chartConfig} className="aspect-auto h-62.5full">
+            <AreaChart data={cumulativeData}>
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey="date"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                minTickGap={32}
+                tickFormatter={v => new Date(v).toLocaleDateString("zh-CN", { month: "short", day: "numeric" })}
+              />
+              <YAxis tickLine={false} axisLine={false} width={50} />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Area
+                dataKey="total"
+                name="累计提交"
+                type="monotone"
+                fill="var(--color-total)"
+                fillOpacity={0.2}
+                stroke="var(--color-total)"
+                strokeWidth={2}
+              />
+            </AreaChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
+
+      {/* 提交大小分布 + 提交类型分布 */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>提交大小分布</CardTitle>
+            <CardDescription>按变更行数分桶统计</CardDescription>
+          </CardHeader>
+          <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+            <ChartContainer config={chartConfig} className="aspect-auto h-62.5 w-full">
+              <BarChart data={sizeDistribution}>
+                <CartesianGrid vertical={false} />
+                <XAxis dataKey="size" tickLine={false} axisLine={false} tickMargin={8} />
+                <YAxis tickLine={false} axisLine={false} width={30} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar dataKey="count" name="提交数" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>提交类型分布</CardTitle>
+            <CardDescription>基于 Conventional Commits 规范提取</CardDescription>
+          </CardHeader>
+          <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+            <ChartContainer config={chartConfig} className="aspect-auto h-62.5 w-full">
+              <BarChart data={typeDistribution} layout="vertical">
+                <CartesianGrid horizontal={false} />
+                <XAxis type="number" tickLine={false} axisLine={false} />
+                <YAxis type="category" dataKey="type" tickLine={false} axisLine={false} width={60} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar dataKey="count" name="提交数" fill="var(--primary)" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* 提交列表 */}
       <Card>
