@@ -1,4 +1,5 @@
 import { IconGitFork, IconStar, IconAlertCircle } from "@tabler/icons-react";
+import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
@@ -87,36 +88,43 @@ export function ReposPage() {
               </Card>
             ))
           : repos.map(repo => (
-              <Card key={repo.id}>
-                <CardHeader>
-                  <CardTitle className="text-base">{repo.full_name}</CardTitle>
-                  {repo.description && (
-                    <CardDescription className="line-clamp-2">{repo.description}</CardDescription>
-                  )}
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-                    {repo.language && (
-                      <Badge variant="secondary">{repo.language}</Badge>
+              <Link
+                key={repo.id}
+                to="/repos/$owner/$repo"
+                params={{ owner: repo.owner.login, repo: repo.name }}
+                className="block rounded-xl transition-shadow hover:shadow-md hover:ring-1 hover:ring-border"
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">{repo.full_name}</CardTitle>
+                    {repo.description && (
+                      <CardDescription className="line-clamp-2">{repo.description}</CardDescription>
                     )}
-                    <span className="flex items-center gap-1">
-                      <IconStar className="size-3.5" />
-                      {repo.stars_count}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <IconGitFork className="size-3.5" />
-                      {repo.forks_count}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <IconAlertCircle className="size-3.5" />
-                      {repo.open_issues_count}
-                    </span>
-                  </div>
-                  <div className="mt-3 text-xs text-muted-foreground">
-                    更新于 {new Date(repo.updated_at).toLocaleDateString("zh-CN")}
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+                      {repo.language && (
+                        <Badge variant="secondary">{repo.language}</Badge>
+                      )}
+                      <span className="flex items-center gap-1">
+                        <IconStar className="size-3.5" />
+                        {repo.stars_count}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <IconGitFork className="size-3.5" />
+                        {repo.forks_count}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <IconAlertCircle className="size-3.5" />
+                        {repo.open_issues_count}
+                      </span>
+                    </div>
+                    <div className="mt-3 text-xs text-muted-foreground">
+                      更新于 {new Date(repo.updated_at).toLocaleDateString("zh-CN")}
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
         {!loading && repos.length === 0 && (
           <p className="col-span-full text-center text-muted-foreground py-8">尚未选择仓库</p>

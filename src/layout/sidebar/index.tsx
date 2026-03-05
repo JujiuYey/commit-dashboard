@@ -3,6 +3,7 @@ import {
   IconGitCommit,
   IconGitPullRequest,
   IconPackages,
+  IconPalette,
   IconSettings,
   IconUsers,
 } from "@tabler/icons-react";
@@ -26,6 +27,7 @@ const data = {
     { title: "PR 统计", url: "/pulls", icon: IconGitPullRequest },
   ],
   navSecondary: [
+    { title: "主题设置", url: "/theme", icon: IconPalette },
     { title: "设置", url: "/settings", icon: IconSettings },
   ],
 };

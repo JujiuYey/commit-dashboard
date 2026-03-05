@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -58,7 +59,7 @@ export function MembersPage() {
         <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
           {barData.length > 0
             ? (
-                <ChartContainer config={chartConfig} className="aspect-auto h-[400px] w-full">
+                <ChartContainer config={chartConfig} className="aspect-auto h-100 w-full">
                   <BarChart data={barData} layout="vertical" margin={{ left: 80 }}>
                     <CartesianGrid horizontal={false} />
                     <XAxis type="number" tickLine={false} axisLine={false} />
@@ -112,13 +113,27 @@ export function MembersPage() {
                   : authorStats.map(a => (
                       <TableRow key={a.email}>
                         <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Avatar className="size-6">
-                              <AvatarImage src={a.avatarUrl} />
-                              <AvatarFallback>{a.name.charAt(0).toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                            <span className="font-medium">{a.name}</span>
-                          </div>
+                          {a.login ? (
+                            <Link
+                              to="/members/$login"
+                              params={{ login: a.login }}
+                              className="flex items-center gap-2 hover:underline"
+                            >
+                              <Avatar className="size-6">
+                                <AvatarImage src={a.avatarUrl} />
+                                <AvatarFallback>{a.name.charAt(0).toUpperCase()}</AvatarFallback>
+                              </Avatar>
+                              <span className="font-medium">{a.name}</span>
+                            </Link>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <Avatar className="size-6">
+                                <AvatarImage src={a.avatarUrl} />
+                                <AvatarFallback>{a.name.charAt(0).toUpperCase()}</AvatarFallback>
+                              </Avatar>
+                              <span className="font-medium">{a.name}</span>
+                            </div>
+                          )}
                         </TableCell>
                         <TableCell className="text-right tabular-nums">{a.count}</TableCell>
                         <TableCell className="text-right tabular-nums text-green-600">+{a.additions}</TableCell>

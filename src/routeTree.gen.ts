@@ -12,11 +12,16 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as LayoutRouteImport } from './routes/_layout'
 import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
+import { Route as LayoutThemeRouteImport } from './routes/_layout/theme'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutReposRouteImport } from './routes/_layout/repos'
 import { Route as LayoutPullsRouteImport } from './routes/_layout/pulls'
 import { Route as LayoutMembersRouteImport } from './routes/_layout/members'
 import { Route as LayoutCommitsRouteImport } from './routes/_layout/commits'
+import { Route as LayoutReposIndexRouteImport } from './routes/_layout/repos.index'
+import { Route as LayoutMembersIndexRouteImport } from './routes/_layout/members.index'
+import { Route as LayoutMembersLoginRouteImport } from './routes/_layout/members.$login'
+import { Route as LayoutReposOwnerRepoRouteImport } from './routes/_layout/repos.$owner.$repo'
 
 const SetupRoute = SetupRouteImport.update({
   id: '/setup',
@@ -30,6 +35,11 @@ const LayoutRoute = LayoutRouteImport.update({
 const LayoutIndexRoute = LayoutIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutThemeRoute = LayoutThemeRouteImport.update({
+  id: '/theme',
+  path: '/theme',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
@@ -57,35 +67,68 @@ const LayoutCommitsRoute = LayoutCommitsRouteImport.update({
   path: '/commits',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutReposIndexRoute = LayoutReposIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LayoutReposRoute,
+} as any)
+const LayoutMembersIndexRoute = LayoutMembersIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LayoutMembersRoute,
+} as any)
+const LayoutMembersLoginRoute = LayoutMembersLoginRouteImport.update({
+  id: '/$login',
+  path: '/$login',
+  getParentRoute: () => LayoutMembersRoute,
+} as any)
+const LayoutReposOwnerRepoRoute = LayoutReposOwnerRepoRouteImport.update({
+  id: '/$owner/$repo',
+  path: '/$owner/$repo',
+  getParentRoute: () => LayoutReposRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof LayoutIndexRoute
   '/setup': typeof SetupRoute
   '/commits': typeof LayoutCommitsRoute
-  '/members': typeof LayoutMembersRoute
+  '/members': typeof LayoutMembersRouteWithChildren
   '/pulls': typeof LayoutPullsRoute
-  '/repos': typeof LayoutReposRoute
+  '/repos': typeof LayoutReposRouteWithChildren
   '/settings': typeof LayoutSettingsRoute
+  '/theme': typeof LayoutThemeRoute
+  '/members/$login': typeof LayoutMembersLoginRoute
+  '/members/': typeof LayoutMembersIndexRoute
+  '/repos/': typeof LayoutReposIndexRoute
+  '/repos/$owner/$repo': typeof LayoutReposOwnerRepoRoute
 }
 export interface FileRoutesByTo {
   '/setup': typeof SetupRoute
   '/commits': typeof LayoutCommitsRoute
-  '/members': typeof LayoutMembersRoute
   '/pulls': typeof LayoutPullsRoute
-  '/repos': typeof LayoutReposRoute
   '/settings': typeof LayoutSettingsRoute
+  '/theme': typeof LayoutThemeRoute
   '/': typeof LayoutIndexRoute
+  '/members/$login': typeof LayoutMembersLoginRoute
+  '/members': typeof LayoutMembersIndexRoute
+  '/repos': typeof LayoutReposIndexRoute
+  '/repos/$owner/$repo': typeof LayoutReposOwnerRepoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_layout': typeof LayoutRouteWithChildren
   '/setup': typeof SetupRoute
   '/_layout/commits': typeof LayoutCommitsRoute
-  '/_layout/members': typeof LayoutMembersRoute
+  '/_layout/members': typeof LayoutMembersRouteWithChildren
   '/_layout/pulls': typeof LayoutPullsRoute
-  '/_layout/repos': typeof LayoutReposRoute
+  '/_layout/repos': typeof LayoutReposRouteWithChildren
   '/_layout/settings': typeof LayoutSettingsRoute
+  '/_layout/theme': typeof LayoutThemeRoute
   '/_layout/': typeof LayoutIndexRoute
+  '/_layout/members/$login': typeof LayoutMembersLoginRoute
+  '/_layout/members/': typeof LayoutMembersIndexRoute
+  '/_layout/repos/': typeof LayoutReposIndexRoute
+  '/_layout/repos/$owner/$repo': typeof LayoutReposOwnerRepoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -97,15 +140,23 @@ export interface FileRouteTypes {
     | '/pulls'
     | '/repos'
     | '/settings'
+    | '/theme'
+    | '/members/$login'
+    | '/members/'
+    | '/repos/'
+    | '/repos/$owner/$repo'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/setup'
     | '/commits'
-    | '/members'
     | '/pulls'
-    | '/repos'
     | '/settings'
+    | '/theme'
     | '/'
+    | '/members/$login'
+    | '/members'
+    | '/repos'
+    | '/repos/$owner/$repo'
   id:
     | '__root__'
     | '/_layout'
@@ -115,7 +166,12 @@ export interface FileRouteTypes {
     | '/_layout/pulls'
     | '/_layout/repos'
     | '/_layout/settings'
+    | '/_layout/theme'
     | '/_layout/'
+    | '/_layout/members/$login'
+    | '/_layout/members/'
+    | '/_layout/repos/'
+    | '/_layout/repos/$owner/$repo'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -144,6 +200,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof LayoutIndexRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/theme': {
+      id: '/_layout/theme'
+      path: '/theme'
+      fullPath: '/theme'
+      preLoaderRoute: typeof LayoutThemeRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/settings': {
@@ -181,24 +244,82 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutCommitsRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/repos/': {
+      id: '/_layout/repos/'
+      path: '/'
+      fullPath: '/repos/'
+      preLoaderRoute: typeof LayoutReposIndexRouteImport
+      parentRoute: typeof LayoutReposRoute
+    }
+    '/_layout/members/': {
+      id: '/_layout/members/'
+      path: '/'
+      fullPath: '/members/'
+      preLoaderRoute: typeof LayoutMembersIndexRouteImport
+      parentRoute: typeof LayoutMembersRoute
+    }
+    '/_layout/members/$login': {
+      id: '/_layout/members/$login'
+      path: '/$login'
+      fullPath: '/members/$login'
+      preLoaderRoute: typeof LayoutMembersLoginRouteImport
+      parentRoute: typeof LayoutMembersRoute
+    }
+    '/_layout/repos/$owner/$repo': {
+      id: '/_layout/repos/$owner/$repo'
+      path: '/$owner/$repo'
+      fullPath: '/repos/$owner/$repo'
+      preLoaderRoute: typeof LayoutReposOwnerRepoRouteImport
+      parentRoute: typeof LayoutReposRoute
+    }
   }
 }
 
+interface LayoutMembersRouteChildren {
+  LayoutMembersLoginRoute: typeof LayoutMembersLoginRoute
+  LayoutMembersIndexRoute: typeof LayoutMembersIndexRoute
+}
+
+const LayoutMembersRouteChildren: LayoutMembersRouteChildren = {
+  LayoutMembersLoginRoute: LayoutMembersLoginRoute,
+  LayoutMembersIndexRoute: LayoutMembersIndexRoute,
+}
+
+const LayoutMembersRouteWithChildren = LayoutMembersRoute._addFileChildren(
+  LayoutMembersRouteChildren,
+)
+
+interface LayoutReposRouteChildren {
+  LayoutReposIndexRoute: typeof LayoutReposIndexRoute
+  LayoutReposOwnerRepoRoute: typeof LayoutReposOwnerRepoRoute
+}
+
+const LayoutReposRouteChildren: LayoutReposRouteChildren = {
+  LayoutReposIndexRoute: LayoutReposIndexRoute,
+  LayoutReposOwnerRepoRoute: LayoutReposOwnerRepoRoute,
+}
+
+const LayoutReposRouteWithChildren = LayoutReposRoute._addFileChildren(
+  LayoutReposRouteChildren,
+)
+
 interface LayoutRouteChildren {
   LayoutCommitsRoute: typeof LayoutCommitsRoute
-  LayoutMembersRoute: typeof LayoutMembersRoute
+  LayoutMembersRoute: typeof LayoutMembersRouteWithChildren
   LayoutPullsRoute: typeof LayoutPullsRoute
-  LayoutReposRoute: typeof LayoutReposRoute
+  LayoutReposRoute: typeof LayoutReposRouteWithChildren
   LayoutSettingsRoute: typeof LayoutSettingsRoute
+  LayoutThemeRoute: typeof LayoutThemeRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutCommitsRoute: LayoutCommitsRoute,
-  LayoutMembersRoute: LayoutMembersRoute,
+  LayoutMembersRoute: LayoutMembersRouteWithChildren,
   LayoutPullsRoute: LayoutPullsRoute,
-  LayoutReposRoute: LayoutReposRoute,
+  LayoutReposRoute: LayoutReposRouteWithChildren,
   LayoutSettingsRoute: LayoutSettingsRoute,
+  LayoutThemeRoute: LayoutThemeRoute,
   LayoutIndexRoute: LayoutIndexRoute,
 }
 

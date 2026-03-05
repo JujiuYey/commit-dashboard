@@ -8,6 +8,7 @@ interface ListCommitsParams {
   since?: string;
   until?: string;
   stat?: boolean;
+  author?: string;
 }
 
 export const giteaCommitsApi = {
@@ -27,6 +28,7 @@ export const giteaCommitsApi = {
           since: params?.since,
           until: params?.until,
           stat: params?.stat,
+          author: params?.author,
         },
       },
     );

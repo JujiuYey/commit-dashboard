@@ -130,7 +130,7 @@ export function DashboardPage() {
                 value={timeRange}
                 onValueChange={v => v && setTimeRange(v)}
                 variant="outline"
-                className="hidden *:data-[slot=toggle-group-item]:!px-4 @[767px]/card:flex"
+                className="hidden *:data-[slot=toggle-group-item]:px-4! @[767px]/card:flex"
               >
                 <ToggleGroupItem value="90d">90 天</ToggleGroupItem>
                 <ToggleGroupItem value="30d">30 天</ToggleGroupItem>
@@ -149,7 +149,7 @@ export function DashboardPage() {
             </CardAction>
           </CardHeader>
           <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-            <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
+            <ChartContainer config={chartConfig} className="aspect-auto h-62.5 w-full">
               <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="fillCommits" x1="0" y1="0" x2="0" y2="1">
@@ -246,7 +246,7 @@ export function DashboardPage() {
 
 function StatCard({ title, value, icon }: { title: string; value: string; icon: React.ReactNode }) {
   return (
-    <Card className="@container/card *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card bg-gradient-to-t shadow-xs">
+    <Card className="@container/card *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card bg-linear-to-t shadow-xs">
       <CardHeader>
         <CardDescription>{title}</CardDescription>
         <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
