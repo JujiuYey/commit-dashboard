@@ -7,8 +7,9 @@ interface DateCount {
   count: number;
 }
 
-interface AuthorStat {
+export interface AuthorStat {
   name: string;
+  login: string;
   email: string;
   avatarUrl: string;
   count: number;
@@ -58,6 +59,7 @@ export function groupCommitsByAuthor(commits: GiteaCommit[]): AuthorStat[] {
     else {
       map.set(email, {
         name: c.commit.author.name,
+        login: c.author?.login ?? "",
         email,
         avatarUrl: c.author?.avatar_url ?? "",
         count: 1,
@@ -107,6 +109,73 @@ export function groupPRsByStatus(prs: GiteaPullRequest[]): {
     else closed++;
   }
   return { open, merged, closed };
+}
+
+export function groupCodeChangesByDate(
+  commits: GiteaCommit[],
+  granularity: Granularity = "day",
+): { date: string; additions: number; deletions: number }[] {
+  const map = new Map<string, { additions: number; deletions: number }>();
+  for (const c of commits) {
+    const key = toDateKey(c.commit.committer.date, granularity);
+    const existing = map.get(key);
+    const additions = c.stats?.additions ?? 0;
+    const deletions = c.stats?.deletions ?? 0;
+    if (existing) {
+      existing.additions += additions;
+      existing.deletions += deletions;
+    }
+    else {
+      map.set(key, { additions, deletions });
+    }
+  }
+  return Array.from(map.entries())
+    .map(([date, stats]) => ({ date, ...stats }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export function getCommitSizeDistribution(
+  commits: GiteaCommit[],
+): { size: string; count: number }[] {
+  const buckets: Record<string, number> = { S: 0, M: 0, L: 0, XL: 0, Empty: 0 };
+  for (const c of commits) {
+    const total = c.stats?.total ?? 0;
+    if (total === 0) buckets.Empty++;
+    else if (total <= 10) buckets.S++;
+    else if (total <= 100) buckets.M++;
+    else if (total <= 500) buckets.L++;
+    else buckets.XL++;
+  }
+  return Object.entries(buckets).map(([size, count]) => ({ size, count }));
+}
+
+const COMMIT_TYPE_REGEX = /^(\w+)(?:\(.+?\))?!?:/;
+const KNOWN_TYPES = new Set(["feat", "fix", "refactor", "docs", "chore", "style", "test", "ci"]);
+
+export function getCommitTypeDistribution(
+  commits: GiteaCommit[],
+): { type: string; count: number }[] {
+  const map = new Map<string, number>();
+  for (const c of commits) {
+    const match = c.commit.message.match(COMMIT_TYPE_REGEX);
+    const type = match && KNOWN_TYPES.has(match[1]) ? match[1] : "other";
+    map.set(type, (map.get(type) ?? 0) + 1);
+  }
+  return Array.from(map.entries())
+    .map(([type, count]) => ({ type, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
+export function getCumulativeCommits(
+  commits: GiteaCommit[],
+  granularity: Granularity = "day",
+): { date: string; total: number }[] {
+  const daily = groupCommitsByDate(commits, granularity);
+  let cumulative = 0;
+  return daily.map(({ date, count }) => {
+    cumulative += count;
+    return { date, total: cumulative };
+  });
 }
 
 export function getCommitHeatmapData(commits: GiteaCommit[]): { day: number; hour: number; count: number }[] {
