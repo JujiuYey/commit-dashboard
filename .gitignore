@@ -7,10 +7,23 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Node.js / Frontend
 node_modules
 dist
 dist-ssr
 *.local
+
+# Go / Backend
+server/tmp/
+*.exe
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+go.work.sum
 
 # Editor directories and files
 .vscode/*
