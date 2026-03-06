@@ -1,4 +1,5 @@
-import type { GiteaCommit, GiteaPullRequest } from "@/types/gitea";
+import type { CommitItem } from "@/api/gitea/commits";
+import type { GiteaPullRequest } from "@/types/gitea";
 
 export type Granularity = "day" | "week" | "month";
 
@@ -33,12 +34,12 @@ function toDateKey(dateStr: string, granularity: Granularity): string {
 }
 
 export function groupCommitsByDate(
-  commits: GiteaCommit[],
+  commits: CommitItem[],
   granularity: Granularity = "day",
 ): DateCount[] {
   const map = new Map<string, number>();
   for (const c of commits) {
-    const key = toDateKey(c.commit.committer.date, granularity);
+    const key = toDateKey(c.committed_at, granularity);
     map.set(key, (map.get(key) ?? 0) + 1);
   }
   return Array.from(map.entries())
@@ -46,25 +47,25 @@ export function groupCommitsByDate(
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
-export function groupCommitsByAuthor(commits: GiteaCommit[]): AuthorStat[] {
+export function groupCommitsByAuthor(commits: CommitItem[]): AuthorStat[] {
   const map = new Map<string, AuthorStat>();
   for (const c of commits) {
-    const email = c.commit.author.email;
+    const email = c.author_email;
     const existing = map.get(email);
     if (existing) {
       existing.count++;
-      existing.additions += c.stats?.additions ?? 0;
-      existing.deletions += c.stats?.deletions ?? 0;
+      existing.additions += c.additions;
+      existing.deletions += c.deletions;
     }
     else {
       map.set(email, {
-        name: c.commit.author.name,
-        login: c.author?.login ?? "",
+        name: c.author_name,
+        login: "",
         email,
-        avatarUrl: c.author?.avatar_url ?? "",
+        avatarUrl: "",
         count: 1,
-        additions: c.stats?.additions ?? 0,
-        deletions: c.stats?.deletions ?? 0,
+        additions: c.additions,
+        deletions: c.deletions,
       });
     }
   }
@@ -112,21 +113,19 @@ export function groupPRsByStatus(prs: GiteaPullRequest[]): {
 }
 
 export function groupCodeChangesByDate(
-  commits: GiteaCommit[],
+  commits: CommitItem[],
   granularity: Granularity = "day",
 ): { date: string; additions: number; deletions: number }[] {
   const map = new Map<string, { additions: number; deletions: number }>();
   for (const c of commits) {
-    const key = toDateKey(c.commit.committer.date, granularity);
+    const key = toDateKey(c.committed_at, granularity);
     const existing = map.get(key);
-    const additions = c.stats?.additions ?? 0;
-    const deletions = c.stats?.deletions ?? 0;
     if (existing) {
-      existing.additions += additions;
-      existing.deletions += deletions;
+      existing.additions += c.additions;
+      existing.deletions += c.deletions;
     }
     else {
-      map.set(key, { additions, deletions });
+      map.set(key, { additions: c.additions, deletions: c.deletions });
     }
   }
   return Array.from(map.entries())
@@ -135,11 +134,11 @@ export function groupCodeChangesByDate(
 }
 
 export function getCommitSizeDistribution(
-  commits: GiteaCommit[],
+  commits: CommitItem[],
 ): { size: string; count: number }[] {
   const buckets: Record<string, number> = { S: 0, M: 0, L: 0, XL: 0, Empty: 0 };
   for (const c of commits) {
-    const total = c.stats?.total ?? 0;
+    const total = c.total_changes;
     if (total === 0) buckets.Empty++;
     else if (total <= 10) buckets.S++;
     else if (total <= 100) buckets.M++;
@@ -153,11 +152,11 @@ const COMMIT_TYPE_REGEX = /^(\w+)(?:\(.+?\))?!?:/;
 const KNOWN_TYPES = new Set(["feat", "fix", "refactor", "docs", "chore", "style", "test", "ci"]);
 
 export function getCommitTypeDistribution(
-  commits: GiteaCommit[],
+  commits: CommitItem[],
 ): { type: string; count: number }[] {
   const map = new Map<string, number>();
   for (const c of commits) {
-    const match = c.commit.message.match(COMMIT_TYPE_REGEX);
+    const match = c.message.match(COMMIT_TYPE_REGEX);
     const type = match && KNOWN_TYPES.has(match[1]) ? match[1] : "other";
     map.set(type, (map.get(type) ?? 0) + 1);
   }
@@ -167,7 +166,7 @@ export function getCommitTypeDistribution(
 }
 
 export function getCumulativeCommits(
-  commits: GiteaCommit[],
+  commits: CommitItem[],
   granularity: Granularity = "day",
 ): { date: string; total: number }[] {
   const daily = groupCommitsByDate(commits, granularity);
@@ -178,10 +177,10 @@ export function getCumulativeCommits(
   });
 }
 
-export function getCommitHeatmapData(commits: GiteaCommit[]): { day: number; hour: number; count: number }[] {
+export function getCommitHeatmapData(commits: CommitItem[]): { day: number; hour: number; count: number }[] {
   const map = new Map<string, number>();
   for (const c of commits) {
-    const d = new Date(c.commit.committer.date);
+    const d = new Date(c.committed_at);
     const key = `${d.getDay()}-${d.getHours()}`;
     map.set(key, (map.get(key) ?? 0) + 1);
   }

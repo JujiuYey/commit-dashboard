@@ -12,11 +12,13 @@ import * as React from "react";
 import {
   Sidebar,
   SidebarContent,
+SidebarFooter,
 } from "@/components/ui/sidebar";
 
 import { Logo } from "./_components/logo";
 import { NavMain } from "./_components/nav-main";
 import { NavSecondary } from "./_components/nav-secondary";
+import { User } from "./_components/user";
 
 const data = {
   navMain: [
@@ -40,6 +42,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={data.navMain} />
       </SidebarContent>
       <NavSecondary items={data.navSecondary} className="mt-auto" />
+      <SidebarFooter>
+        <User />
+      </SidebarFooter>
     </Sidebar>
   );
 }

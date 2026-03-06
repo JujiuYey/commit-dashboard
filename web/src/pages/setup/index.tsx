@@ -2,7 +2,7 @@ import { IconBrandGit, IconLoader2 } from "@tabler/icons-react";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
-import { giteaAuthApi } from "@/api/gitea";
+import { giteaAuthApi } from "@/api";
 import { Button } from "@/components/ui/button";
 import {
   Card,

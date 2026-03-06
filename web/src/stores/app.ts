@@ -2,11 +2,11 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export type ThemeMode = "system" | "light" | "dark";
-export type ThemeColor =
-  | "zinc" | "slate" | "stone"
-  | "red" | "rose" | "orange" | "amber" | "yellow"
-  | "emerald" | "green" | "teal" | "cyan"
-  | "sky" | "blue" | "indigo" | "violet" | "purple" | "fuchsia" | "pink";
+export type ThemeColor
+  = | "zinc" | "slate" | "stone"
+    | "red" | "rose" | "orange" | "amber" | "yellow"
+    | "emerald" | "green" | "teal" | "cyan"
+    | "sky" | "blue" | "indigo" | "violet" | "purple" | "fuchsia" | "pink";
 
 interface AppSettings {
   autoSave: boolean;
@@ -30,7 +30,7 @@ export const useAppStore = create<AppState>()(
   persist(
     set => ({
       settings: { ...defaultSettings },
-      updateSettings: (partial) =>
+      updateSettings: partial =>
         set(state => ({
           settings: { ...state.settings, ...partial },
         })),
