@@ -3,10 +3,10 @@ import { Link } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { IconAlertCircle, IconGitFork, IconStar } from "@tabler/icons-react";
-import type { GiteaRepository } from "@/types/gitea";
+import type { RepoItem } from "@/api/gitea/repos";
 
 interface ReposCardsProps {
-  repos: GiteaRepository[];
+  repos: RepoItem[];
   loading: boolean;
 }
 
@@ -28,7 +28,7 @@ export function ReposCards({ repos, loading }: ReposCardsProps) {
 
   if (repos.length === 0) {
     return (
-      <p className="col-span-full text-center text-muted-foreground py-8">尚未选择仓库</p>
+      <p className="col-span-full text-center text-muted-foreground py-8">暂无仓库数据，请先同步</p>
     );
   }
 
@@ -38,7 +38,7 @@ export function ReposCards({ repos, loading }: ReposCardsProps) {
         <Link
           key={repo.id}
           to="/repos/$owner/$repo"
-          params={{ owner: repo.owner.login, repo: repo.name }}
+          params={{ owner: repo.owner, repo: repo.name }}
           className="block rounded-xl transition-shadow hover:shadow-md hover:ring-1 hover:ring-border"
         >
           <Card>
@@ -50,9 +50,7 @@ export function ReposCards({ repos, loading }: ReposCardsProps) {
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-                {repo.language && (
-                  <Badge variant="secondary">{repo.language}</Badge>
-                )}
+                <Badge variant="secondary">{repo.default_branch}</Badge>
                 <span className="flex items-center gap-1">
                   <IconStar className="size-3.5" />
                   {repo.stars_count}
@@ -67,7 +65,7 @@ export function ReposCards({ repos, loading }: ReposCardsProps) {
                 </span>
               </div>
               <div className="mt-3 text-xs text-muted-foreground">
-                更新于 {new Date(repo.updated_at).toLocaleDateString("zh-CN")}
+                同步于 {new Date(repo.synced_at).toLocaleDateString("zh-CN")}
               </div>
             </CardContent>
           </Card>

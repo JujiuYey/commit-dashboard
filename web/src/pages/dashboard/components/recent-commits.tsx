@@ -15,10 +15,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { GiteaCommit } from "@/types/gitea";
+import type { CommitItem } from "@/api/gitea/commits";
 
 interface RecentCommitsProps {
-  commits: GiteaCommit[];
+  commits: CommitItem[];
   loading?: boolean;
   limit?: number;
 }
@@ -59,11 +59,11 @@ export function RecentCommits({
                   : commits.slice(0, limit).map(c => (
                       <TableRow key={c.sha}>
                         <TableCell className="max-w-xs truncate font-medium">
-                          {c.commit.message.split("\n")[0]}
+                          {c.message.split("\n")[0]}
                         </TableCell>
-                        <TableCell>{c.commit.author.name}</TableCell>
+                        <TableCell>{c.author_name}</TableCell>
                         <TableCell className="text-muted-foreground">
-                          {new Date(c.commit.committer.date).toLocaleDateString("zh-CN")}
+                          {new Date(c.committed_at).toLocaleDateString("zh-CN")}
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="font-mono text-xs">

@@ -3,22 +3,22 @@ import { type ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/sag-ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { GiteaCommit } from "@/types/gitea";
+import type { CommitItem } from "@/api/gitea/commits";
 
-const columns: ColumnDef<GiteaCommit>[] = [
+const columns: ColumnDef<CommitItem>[] = [
   {
-    accessorKey: "commit.message",
+    accessorKey: "message",
     header: "提交信息",
     cell: ({ row }) => (
       <span className="block max-w-md truncate font-medium">
-        {row.original.commit.message.split("\n")[0]}
+        {row.original.message.split("\n")[0]}
       </span>
     ),
   },
   {
-    accessorKey: "commit.committer.date",
+    accessorKey: "committed_at",
     header: "日期",
-    cell: ({ row }) => new Date(row.original.commit.committer.date).toLocaleString("zh-CN"),
+    cell: ({ row }) => new Date(row.original.committed_at).toLocaleString("zh-CN"),
   },
   {
     accessorKey: "sha",
@@ -32,7 +32,7 @@ const columns: ColumnDef<GiteaCommit>[] = [
 ];
 
 interface CommitsTableProps {
-  data: GiteaCommit[];
+  data: CommitItem[];
   loading: boolean;
   total: number;
   page: number;
