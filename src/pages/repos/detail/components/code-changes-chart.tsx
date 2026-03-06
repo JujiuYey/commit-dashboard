@@ -12,7 +12,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/chart";
+} from "@/components/ui/card";
 
 const chartConfig = {
   additions: {
