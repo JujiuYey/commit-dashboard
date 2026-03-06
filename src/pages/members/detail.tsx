@@ -44,7 +44,7 @@ export function MemberDetailPage() {
   const [pageSize, setPageSize] = React.useState(20);
 
   const since = new Date(Date.now() - 90 * 86400000).toISOString();
-  const { data: commits, byRepo, total, loading } = useMemberCommits(login, {
+  const { data: commits, byRepo, loading } = useMemberCommits(login, {
     since,
     stat: true,
   });
