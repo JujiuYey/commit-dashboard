@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"time"
 )
@@ -141,9 +142,9 @@ func (c *Client) GetRepos() ([]GiteaRepo, error) {
 	return allRepos, nil
 }
 
-// GetRepoCommits 获取仓库的所有提交记录
-// sha 参数指定分支或起始 commit
-func (c *Client) GetRepoCommits(owner, repo, sha string) ([]GiteaCommit, error) {
+// GetRepoCommits 获取仓库的提交记录
+// sha 参数指定分支，stopAtSHA 为上次同步的最新提交 SHA（增量同步，为空则全量）
+func (c *Client) GetRepoCommits(owner, repo, sha, stopAtSHA string) ([]GiteaCommit, error) {
 	var allCommits []GiteaCommit
 	page := 1
 	limit := 50
@@ -151,24 +152,40 @@ func (c *Client) GetRepoCommits(owner, repo, sha string) ([]GiteaCommit, error) 
 	for {
 		path := fmt.Sprintf("/repos/%s/%s/commits?page=%d&limit=%d&sha=%s&stat=true",
 			owner, repo, page, limit, sha)
+		log.Printf("[GetRepoCommits] 请求: %s", path)
 		body, err := c.get(path)
 		if err != nil {
+			log.Printf("[GetRepoCommits] 请求失败: %v", err)
 			return nil, fmt.Errorf("获取提交记录失败: %w", err)
 		}
+		log.Printf("[GetRepoCommits] 返回 %d 字节", len(body))
 
 		var commits []GiteaCommit
 		if err := json.Unmarshal(body, &commits); err != nil {
 			return nil, fmt.Errorf("解析提交记录失败: %w", err)
 		}
 
-		allCommits = append(allCommits, commits...)
+		// 增量同步：遇到已同步的 SHA 则停止
+		done := false
+		if stopAtSHA != "" {
+			for _, commit := range commits {
+				if commit.SHA == stopAtSHA {
+					done = true
+					break
+				}
+				allCommits = append(allCommits, commit)
+			}
+		} else {
+			allCommits = append(allCommits, commits...)
+		}
 
-		if len(commits) < limit {
+		if done || len(commits) < limit {
 			break
 		}
 		page++
 	}
 
+	log.Printf("[GetRepoCommits] 共获取 %d 条新提交", len(allCommits))
 	return allCommits, nil
 }
 

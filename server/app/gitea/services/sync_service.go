@@ -60,6 +60,19 @@ func (s *SyncService) SyncRepos(ctx context.Context, client *gitea_client.Client
 	return len(giteaRepos), nil
 }
 
+// SyncReposOnly 仅同步仓库列表
+func (s *SyncService) SyncReposOnly(ctx context.Context, client *gitea_client.Client) (*gitea_res.SyncReposResult, error) {
+	start := time.Now()
+	synced, err := s.SyncRepos(ctx, client)
+	if err != nil {
+		return nil, err
+	}
+	return &gitea_res.SyncReposResult{
+		SyncedRepos: synced,
+		Duration:    fmt.Sprintf("%.1fs", time.Since(start).Seconds()),
+	}, nil
+}
+
 // SyncCommits 同步提交记录
 func (s *SyncService) SyncCommits(ctx context.Context, client *gitea_client.Client, repoIDs []int64) (*gitea_res.SyncResult, error) {
 	start := time.Now()
@@ -103,10 +116,22 @@ func (s *SyncService) SyncCommits(ctx context.Context, client *gitea_client.Clie
 	return result, nil
 }
 
+// SyncRepoCommitsByID 同步指定 Gitea 仓库 ID 的提交记录
+func (s *SyncService) SyncRepoCommitsByID(ctx context.Context, client *gitea_client.Client, giteaRepoID int64) (int, error) {
+	repo, err := s.repoRepo.GetByGiteaID(ctx, giteaRepoID)
+	if err != nil {
+		return 0, fmt.Errorf("仓库不存在: %w", err)
+	}
+	return s.syncRepoCommits(ctx, client, repo)
+}
+
 // syncRepoCommits 同步单个仓库的提交记录
 func (s *SyncService) syncRepoCommits(ctx context.Context, client *gitea_client.Client, repo *gitea_db.Repository) (int, error) {
-	// 从 Gitea 获取提交记录
-	giteaCommits, err := client.GetRepoCommits(repo.Owner, repo.Name, repo.DefaultBranch)
+	// 查询上次同步的最新 SHA，用于增量同步
+	latestSHA, _ := s.commitRepo.GetLatestSHA(ctx, int(repo.ID))
+
+	// 从 Gitea 获取提交记录（传入 latestSHA 实现增量）
+	giteaCommits, err := client.GetRepoCommits(repo.Owner, repo.Name, repo.DefaultBranch, latestSHA)
 	if err != nil {
 		return 0, fmt.Errorf("获取提交记录失败: %w", err)
 	}

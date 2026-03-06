@@ -32,7 +32,9 @@ func SetupGiteaRoutes(router fiber.Router, db *bun.DB) {
 	// 同步路由
 	sync := router.Group("/sync")
 	{
+		sync.Post("/repos", syncHandler.SyncRepos)
 		sync.Post("/commits", syncHandler.SyncCommits)
+		sync.Post("/repo-commits", syncHandler.SyncRepoCommits)
 	}
 
 	// 仓库路由

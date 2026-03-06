@@ -19,6 +19,29 @@ func NewSyncHandler(syncService *services.SyncService) *SyncHandler {
 	return &SyncHandler{syncService: syncService}
 }
 
+// SyncRepos 同步仓库列表
+func (h *SyncHandler) SyncRepos(c *fiber.Ctx) error {
+	giteaURL := c.Get("X-Gitea-Base-Url")
+	giteaToken := c.Get("X-Gitea-Token")
+
+	if giteaURL == "" || giteaToken == "" {
+		return response.BadRequestCtx(c, "请提供 Gitea 连接信息 (X-Gitea-Base-Url, X-Gitea-Token)")
+	}
+
+	client := gitea_client.NewClient(giteaURL, giteaToken)
+
+	if _, err := client.VerifyToken(); err != nil {
+		return response.UnauthorizedCtx(c, "Gitea Token 无效")
+	}
+
+	result, err := h.syncService.SyncReposOnly(c.Context(), client)
+	if err != nil {
+		return response.InternalServerCtx(c, "同步仓库失败: "+err.Error())
+	}
+
+	return response.SuccessCtx(c, result)
+}
+
 // SyncCommits 同步提交记录
 func (h *SyncHandler) SyncCommits(c *fiber.Ctx) error {
 	// 从 Header 获取 Gitea 连接信息
@@ -51,4 +74,32 @@ func (h *SyncHandler) SyncCommits(c *fiber.Ctx) error {
 	}
 
 	return response.SuccessCtx(c, result)
+}
+
+// SyncRepoCommits 同步单个仓库的提交记录
+func (h *SyncHandler) SyncRepoCommits(c *fiber.Ctx) error {
+	giteaURL := c.Get("X-Gitea-Base-Url")
+	giteaToken := c.Get("X-Gitea-Token")
+
+	if giteaURL == "" || giteaToken == "" {
+		return response.BadRequestCtx(c, "请提供 Gitea 连接信息 (X-Gitea-Base-Url, X-Gitea-Token)")
+	}
+
+	var req gitea_req.SyncRepoCommitsRequest
+	if err := c.BodyParser(&req); err != nil || req.RepoID == 0 {
+		return response.BadRequestCtx(c, "请提供有效的 repo_id")
+	}
+
+	client := gitea_client.NewClient(giteaURL, giteaToken)
+
+	if _, err := client.VerifyToken(); err != nil {
+		return response.UnauthorizedCtx(c, "Gitea Token 无效")
+	}
+
+	newCommits, err := h.syncService.SyncRepoCommitsByID(c.Context(), client, req.RepoID)
+	if err != nil {
+		return response.InternalServerCtx(c, "同步失败: "+err.Error())
+	}
+
+	return response.SuccessCtx(c, fiber.Map{"new_commits": newCommits})
 }

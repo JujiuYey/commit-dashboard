@@ -35,14 +35,6 @@ func SetupRouter(
 	// 路由组
 	api := app.Group("/api")
 
-	// 健康检查
-	api.Get("/health", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{
-			"status":  "ok",
-			"service": "commit-dashboard",
-		})
-	})
-
 	// Gitea 相关路由
 	db := dbService.GetDB()
 	gitea_router.SetupGiteaRoutes(api, db)
