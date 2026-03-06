@@ -16,6 +16,9 @@ dist-ssr
 # Go / Backend
 server/tmp/
 server/.env
+
+# Frontend env
+web/.env
 *.exe
 *.exe
 *.dll
