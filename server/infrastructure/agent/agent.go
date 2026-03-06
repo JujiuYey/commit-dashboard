@@ -144,7 +144,7 @@ func (a *Agent) Process(ctx context.Context, req AgentRequest) (AgentResponse, e
 func (a *Agent) buildSystemPrompt() string {
 	toolsJSON := a.toolRegistry.GetToolsJSON()
 
-	return fmt.Sprintf(`你是一个智能助手，负责帮助用户管理系统。
+	return fmt.Sprintf(`你是 Commit Dashboard 的智能分析助手，帮助用户分析代码提交记录、贡献者统计和仓库信息。
 
 ## 可用工具
 你可以使用以下工具来完成用户的请求：

@@ -12,31 +12,12 @@ import (
 	"github.com/uptrace/bun/extra/bundebug"
 
 	ai_db "sag-reg-server/app/ai/models/db"
-	system_db "sag-reg-server/app/system/models/db"
-	wiki_db "sag-reg-server/app/wiki/models/db"
-	ai_repo "sag-reg-server/app/ai/repository"
-	system_repo "sag-reg-server/app/system/repository"
-	wiki_repo "sag-reg-server/app/wiki/repository"
+	gitea_db "sag-reg-server/app/gitea/models/db"
 )
 
 // 数据库服务（只负责连接管理）
 type DatabaseService struct {
 	db *bun.DB
-
-	// Wiki Repositories
-	Documents      *wiki_repo.DocumentRepository
-	Folders wiki_repo.FolderRepository
-
-	// AI Repositories
-	AgentSessions *ai_repo.AgentSessionRepository
-	AgentMessages *ai_repo.AgentMessageRepository
-	RagSessions   *ai_repo.RagSessionRepository
-	RagMessages   *ai_repo.RagMessageRepository
-
-	// System Repositories
-	Users       *system_repo.UserRepository
-	Roles       system_repo.RoleRepository
-	Departments system_repo.DepartmentRepository
 }
 
 // 创建数据库服务
@@ -45,27 +26,21 @@ func NewDatabaseService(dsn string) (*DatabaseService, error) {
 	sqldb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dsn)))
 
 	// 配置连接池
-	sqldb.SetMaxOpenConns(25)                 // 最大打开连接数
-	sqldb.SetMaxIdleConns(10)                 // 最大空闲连接数（增加以减少重连）
-	sqldb.SetConnMaxLifetime(30 * time.Minute) // 连接最大生命周期（增加到30分钟）
-	sqldb.SetConnMaxIdleTime(5 * time.Minute)  // 空闲连接最大生命周期（必须小于 MaxLifetime）
+	sqldb.SetMaxOpenConns(25)
+	sqldb.SetMaxIdleConns(10)
+	sqldb.SetConnMaxLifetime(30 * time.Minute)
+	sqldb.SetConnMaxIdleTime(5 * time.Minute)
 
 	// 创建 Bun DB 实例
 	db := bun.NewDB(sqldb, pgdialect.New())
 
 	// 注册模型
-	db.RegisterModel((*wiki_db.Document)(nil))
-	db.RegisterModel((*wiki_db.Folder)(nil))
-	db.RegisterModel((*wiki_db.FolderPermission)(nil))
+	db.RegisterModel((*gitea_db.Repository)(nil))
+	db.RegisterModel((*gitea_db.Commit)(nil))
+	db.RegisterModel((*gitea_db.Contributor)(nil))
+	db.RegisterModel((*gitea_db.ContributorRepoStats)(nil))
 	db.RegisterModel((*ai_db.AgentSession)(nil))
 	db.RegisterModel((*ai_db.AgentMessage)(nil))
-	db.RegisterModel((*ai_db.RagSession)(nil))
-	db.RegisterModel((*ai_db.RagMessage)(nil))
-	db.RegisterModel((*system_db.User)(nil))
-	db.RegisterModel((*system_db.Role)(nil))
-	db.RegisterModel((*system_db.Department)(nil))
-	db.RegisterModel((*system_db.UserRole)(nil))
-	db.RegisterModel((*system_db.UserDepartment)(nil))
 
 	// 添加查询钩子（开发环境下打印 SQL）
 	db.AddQueryHook(bundebug.NewQueryHook(
@@ -81,25 +56,7 @@ func NewDatabaseService(dsn string) (*DatabaseService, error) {
 		return nil, fmt.Errorf("数据库连接失败: %w", err)
 	}
 
-	// 初始化所有 repositories
-	return &DatabaseService{
-		db: db,
-
-		// Wiki Repositories
-		Documents:      wiki_repo.NewDocumentRepository(db),
-		Folders: wiki_repo.NewFolderRepository(db),
-
-		// AI Repositories
-		AgentSessions: ai_repo.NewAgentSessionRepository(db),
-		AgentMessages: ai_repo.NewAgentMessageRepository(db),
-		RagSessions:   ai_repo.NewRagSessionRepository(db),
-		RagMessages:   ai_repo.NewRagMessageRepository(db),
-
-		// System Repositories
-		Users:       system_repo.NewUserRepository(db),
-		Roles:       system_repo.NewRoleRepository(db),
-		Departments: system_repo.NewDepartmentRepository(db),
-	}, nil
+	return &DatabaseService{db: db}, nil
 }
 
 // 关闭数据库连接
