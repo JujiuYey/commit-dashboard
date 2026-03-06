@@ -1,38 +1,51 @@
-import type { GiteaCommit, PaginatedResponse } from "@/types/gitea";
+import type { ApiResponse, PageData } from "@/types/api";
 import { request } from "@/utils/request";
 
-interface ListCommitsParams {
-  page?: number;
-  limit?: number;
-  sha?: string;
-  since?: string;
-  until?: string;
-  stat?: boolean;
-  author?: string;
+export interface CommitItem {
+  id: number;
+  sha: string;
+  author_name: string;
+  author_email: string;
+  message: string;
+  additions: number;
+  deletions: number;
+  total_changes: number;
+  repo_name: string;
+  committed_at: string;
 }
 
-export const giteaCommitsApi = {
-  listCommits: async (
-    owner: string,
-    repo: string,
-    params?: ListCommitsParams,
-  ): Promise<PaginatedResponse<GiteaCommit>> => {
-    const res = await request<GiteaCommit[]>(
-      `/repos/${owner}/${repo}/commits`,
-      {
-        method: "GET",
-        params: {
-          page: params?.page ?? 1,
-          limit: params?.limit ?? 50,
-          sha: params?.sha,
-          since: params?.since,
-          until: params?.until,
-          stat: params?.stat,
-          author: params?.author,
-        },
-      },
-    );
-    const total = Number(res.headers["x-total-count"]) || 0;
-    return { data: res.data, total };
-  },
+export interface CommitTrendItem {
+  date: string;
+  commits: number;
+}
+
+export interface CommitHeatmapItem {
+  day_of_week: number;
+  hour: number;
+  count: number;
+}
+
+export interface CommitStats {
+  total_commits: number;
+  total_additions: number;
+  total_deletions: number;
+  trend: CommitTrendItem[];
+  heatmap: CommitHeatmapItem[];
+}
+
+export interface CommitListParams {
+  repo_id?: number;
+  author?: string;
+  start_date?: string;
+  end_date?: string;
+  page?: number;
+  page_size?: number;
+}
+
+export const commitsApi = {
+  list: (params?: CommitListParams) =>
+    request.get<ApiResponse<PageData<CommitItem>>>("/commits", { params }).then(res => res.data),
+
+  stats: (params?: { repo_id?: number; start_date?: string; end_date?: string }) =>
+    request.get<ApiResponse<CommitStats>>("/commits/stats", { params }).then(res => res.data),
 };

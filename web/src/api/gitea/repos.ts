@@ -1,17 +1,21 @@
-import type { GiteaRepository } from "@/types/gitea";
+import type { ApiResponse } from "@/types/api";
 import { request } from "@/utils/request";
 
-export const giteaReposApi = {
-  getUserRepos: (params?: { page?: number; limit?: number }) =>
-    request.get<GiteaRepository[]>("/user/repos", {
-      params: { page: params?.page ?? 1, limit: params?.limit ?? 50, sort: "updated", order: "desc" },
-    }),
+export interface RepoItem {
+  id: number;
+  gitea_id: number;
+  owner: string;
+  name: string;
+  full_name: string;
+  description: string;
+  default_branch: string;
+  stars_count: number;
+  forks_count: number;
+  open_issues_count: number;
+  synced_at: string;
+}
 
-  getOrgRepos: (org: string, params?: { page?: number; limit?: number }) =>
-    request.get<GiteaRepository[]>(`/orgs/${org}/repos`, {
-      params: { page: params?.page ?? 1, limit: params?.limit ?? 50 },
-    }),
-
-  getRepoInfo: (owner: string, repo: string) =>
-    request.get<GiteaRepository>(`/repos/${owner}/${repo}`),
+export const reposApi = {
+  list: () =>
+    request.get<ApiResponse<RepoItem[]>>("/repos").then(res => res.data),
 };
