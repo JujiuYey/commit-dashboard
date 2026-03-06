@@ -1,31 +1,25 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { giteaCommitsApi } from "@/api/gitea";
-import type { GiteaCommit } from "@/types/gitea";
+import { commitsApi } from "@/api";
+import type { CommitItem } from "@/api/gitea/commits";
 
 interface UseRepoCommitsOptions {
   page?: number;
-  limit?: number;
-  since?: string;
-  until?: string;
-  stat?: boolean;
+  page_size?: number;
+  start_date?: string;
+  end_date?: string;
+  author?: string;
 }
 
-export function useRepoCommits(
-  owner: string,
-  repo: string,
-  options: UseRepoCommitsOptions = {},
-) {
-  const { page = 1, limit = 50, since, until, stat } = options;
-
+export function useRepoCommits(repoId: number, options: UseRepoCommitsOptions = {}) {
   const query = useQuery({
-    queryKey: ["repo-commits", owner, repo, page, limit, since, until, stat],
-    queryFn: () => giteaCommitsApi.listCommits(owner, repo, { page, limit, since, until, stat }),
-    enabled: !!owner && !!repo,
+    queryKey: ["repo-commits", repoId, options],
+    queryFn: () => commitsApi.list({ ...options, repo_id: repoId }),
+    enabled: !!repoId,
   });
 
   return {
-    data: query.data?.data ?? [] as GiteaCommit[],
+    data: query.data?.data ?? [] as CommitItem[],
     total: query.data?.total ?? 0,
     loading: query.isLoading,
     error: query.error,
