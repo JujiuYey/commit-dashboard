@@ -6,16 +6,19 @@ import { useGiteaStore } from "@/stores/gitea";
 
 const instance = axios.create({
   timeout: 30000,
-  baseURL: "/gitea-api/v1",
+  baseURL: "http://localhost:8080/api",
 });
 
 instance.interceptors.request.use((config) => {
-  const { baseUrl, token } = useGiteaStore.getState();
+  const { baseUrl, token, currentUser } = useGiteaStore.getState();
   if (baseUrl) {
     config.headers["X-Gitea-Base-Url"] = baseUrl;
   }
   if (token) {
-    config.headers.Authorization = `token ${token}`;
+    config.headers["X-Gitea-Token"] = token;
+  }
+  if (currentUser) {
+    config.headers["X-User-Id"] = String(currentUser.id);
   }
   return config;
 });
@@ -33,6 +36,7 @@ instance.interceptors.response.use(
     }
 
     const status = error.response?.status;
+    const msg = error.response?.data?.message || error.message || "请求失败";
     if (status === 401) {
       toast.error("Token 无效", { description: "请检查你的 Gitea 访问令牌" });
     }
@@ -40,7 +44,6 @@ instance.interceptors.response.use(
       toast.error("无权限", { description: "你没有权限访问此资源" });
     }
     else {
-      const msg = error.response?.data?.message || error.message || "请求失败";
       toast.error("请求失败", { description: msg });
     }
 

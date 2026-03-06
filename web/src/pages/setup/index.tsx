@@ -34,14 +34,11 @@ export function SetupPage() {
     const normalizedUrl = url.replace(/\/+$/, "");
 
     try {
-      useGiteaStore.setState({ baseUrl: normalizedUrl, token });
-
-      const user = await giteaAuthApi.verifyToken();
+      const user = await giteaAuthApi.verifyToken(normalizedUrl, token);
       setConnection(normalizedUrl, token, user);
       navigate({ to: "/" });
     }
     catch {
-      useGiteaStore.setState({ baseUrl: "", token: "" });
       setError("连接失败，请检查 URL 和 Token 是否正确");
     }
     finally {
