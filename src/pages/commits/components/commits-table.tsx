@@ -30,7 +30,8 @@ const columns: ColumnDef<GiteaCommit>[] = [
     cell: ({ row }) =>
       new Date(row.original.commit.committer.date).toLocaleString("zh-CN"),
   },
- : "sha",
+  {
+    accessorKey: "sha",
     header: "SHA",
     cell: ({ row }) => (
       <Badge variant="outline" className="font-mono text-xs">
@@ -73,7 +74,7 @@ export function CommitsTable({
           pagination={{
             page,
             pageSize,
-            total,
+            total: total || 0,
             onPageChange,
             onPageSizeChange: (s) => {
               onPageSizeChange(s);
